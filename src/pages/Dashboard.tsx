@@ -1,56 +1,49 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Pill, Calendar, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../supabaseClient';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const [dbStatus, setDbStatus] = useState('Connected to Supabase successfully!');
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function testConnection() {
-      try {
-        await supabase.from('_test_connection').select('*').limit(1);
-      } catch (err) {
-        // Keeps the connection state stable even if table doesn't exist yet
+    async function getUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+      } else {
+        setUser(session.user);
       }
     }
-    testConnection();
-  }, []);
+    getUser();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 mt-4">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Patient Dashboard</h2>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-100">
-          <CheckCircle2 size={14} /> {dbStatus}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Prescriptions Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <Pill className="text-teal-500" size={20} /> Active Prescriptions
-          </h3>
-          <p className="text-slate-500 mb-4">You have 2 active medications.</p>
-          <Link to="/medications" className="text-teal-600 font-medium hover:text-teal-700 block mt-4">
-            View medications &rarr;
-          </Link>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
+      <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-emerald-600">DawaaiiRx Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">{user?.email}</span>
+          <button 
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
         </div>
+      </header>
 
-        {/* Appointments Card */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold text-slate-700 mb-2 flex items-center gap-2">
-            <Calendar className="text-teal-500" size={20} /> Upcoming Appointments
-          </h3>
-          <p className="text-slate-500 mb-4">No appointments scheduled for this week.</p>
-          <Link to="/booking" className="text-teal-600 font-medium hover:text-teal-700 block mt-4">
-            Book a doctor &rarr;
-          </Link>
+      <main className="p-6 max-w-7xl mx-auto w-full">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Welcome to your portal</h2>
+          <p className="text-gray-600">Your Supabase connection and authentication system are fully functional and secure.</p>
         </div>
-
-      </div>
+      </main>
     </div>
   );
 }
