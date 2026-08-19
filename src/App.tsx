@@ -1,24 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Booking from './pages/Booking';
-import Medications from './pages/Medications';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
-        {/* Auth page stands alone without the top navbar */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
-
-        {/* Main app pages wrapped in the layout */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="booking" element={<Booking />} />
-          <Route path="medications" element={<Medications />} />
-        </Route>
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
