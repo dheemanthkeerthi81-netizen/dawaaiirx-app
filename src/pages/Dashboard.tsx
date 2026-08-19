@@ -13,27 +13,39 @@ export default function Dashboard() {
   const [relation, setRelation] = useState('');
   const [medicine, setMedicine] = useState('');
   const [dosage, setDosage] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) navigate('/login');
-      else {
-        setUser(session.user);
-        fetchData(session.user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate('/login');
+        } else {
+          setUser(session.user);
+          await fetchData(session.user.id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
     }
     init();
   }, [navigate]);
 
   async function fetchData(userId: string) {
-    const { data: fam } = await supabase.from('family_members').select('*').eq('supervisor_id', userId);
-    setFamily(fam || []);
-    
-    const { data: meds } = await supabase.from('prescriptions').select('*').eq('user_id', userId);
-    setPrescriptions(meds || []);
+    try {
+      const { data: fam } = await supabase.from('family_members').select('*').eq('supervisor_id', userId);
+      setFamily(fam || []);
+      
+      const { data: meds } = await supabase.from('prescriptions').select('*').eq('user_id', userId);
+      setPrescriptions(meds || []);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   const addFamilyMember = async (e: React.FormEvent) => {
@@ -61,6 +73,10 @@ export default function Dashboard() {
     await supabase.auth.signOut();
     navigate('/login');
   };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">Loading your dashboard...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
@@ -109,7 +125,6 @@ export default function Dashboard() {
             </button>
           </form>
 
-          {/* List of family members */}
           <div className="mt-6">
             <h3 className="text-xs font-semibold uppercase text-gray-500 mb-2">Registered Members</h3>
             {family.length === 0 ? (
@@ -160,7 +175,7 @@ export default function Dashboard() {
                 placeholder="e.g. 5ml or 250mg" 
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" 
                 value={dosage} 
-                onChange={e => setDosage(e.target.value)} 
+                onChange={e => setGarage?.(e.target.value) || setDosage(e.target.value)} 
                 required
               />
             </div>
@@ -169,7 +184,6 @@ export default function Dashboard() {
             </button>
           </form>
 
-          {/* List of assigned meds */}
           <div className="mt-6">
             <h3 className="text-xs font-semibold uppercase text-gray-500 mb-2">Active Prescriptions List</h3>
             {prescriptions.length === 0 ? (
